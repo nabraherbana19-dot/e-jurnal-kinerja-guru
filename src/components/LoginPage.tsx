@@ -18,7 +18,7 @@ import {
   TutWuriHandayaniLogo,
   KemenagLogo,
 } from './OfficialLogos';
-import { loadAuthAccounts } from '../utils/storage';
+import { loadAuthAccounts, loadSchoolBranding } from '../utils/storage';
 
 interface LoginPageProps {
   currentRole: UserRole;
@@ -153,8 +153,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
   // Render the logo inside the center squircle
   const renderLogo = () => {
-    const logoType = profile.loginLogoType || 'default';
-    const customUrl = profile.loginLogoUrl || profile.customLogoUrl;
+    const school = loadSchoolBranding();
+    const logoType = (profile.loginLogoType && profile.loginLogoType !== 'default') 
+      ? profile.loginLogoType 
+      : (school.loginLogoType && school.loginLogoType !== 'default') 
+      ? school.loginLogoType 
+      : (profile.logoType && profile.logoType !== 'none')
+      ? profile.logoType
+      : (school.logoType && school.logoType !== 'none')
+      ? school.logoType
+      : 'default';
+
+    const customUrl = profile.loginLogoUrl || school.loginLogoUrl || profile.customLogoUrl || school.customLogoUrl;
 
     if (logoType === 'custom' && customUrl) {
       return (

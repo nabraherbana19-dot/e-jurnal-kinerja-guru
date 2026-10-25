@@ -83,20 +83,63 @@ export function getInitialReport(): DailyReport {
   };
 }
 
+const SCHOOL_BRANDING_KEY = 'ejurnal_school_branding_v2';
+
+export interface SchoolBranding {
+  kopBaris1: string;
+  kopBaris2: string;
+  kopBaris3: string;
+  kopAlamat: string;
+  kopKontak: string;
+  logoType: 'none' | 'tutwuri' | 'disdik' | 'kemenag' | 'custom';
+  customLogoUrl?: string;
+  loginLogoType?: 'default' | 'tutwuri' | 'disdik' | 'kemenag' | 'custom';
+  loginLogoUrl?: string;
+  kotaPenetapan: string;
+  unitKerja: string;
+  namaAtasan: string;
+  nipAtasan: string;
+  jabatanAtasan: string;
+  sertakanAtasan: boolean;
+  labelEvidence?: string;
+  alamatEvidence?: string;
+  koordinatEvidence?: string;
+  skalaWatermark?: number;
+  posisiWatermark?: 'kiri-bawah' | 'kanan-bawah' | 'tengah-bawah';
+  sertakanCatatanDiFoto?: boolean;
+}
+
+export function loadSchoolBranding(): Partial<SchoolBranding> {
+  try {
+    const raw = localStorage.getItem(SCHOOL_BRANDING_KEY);
+    if (raw) {
+      return JSON.parse(raw);
+    }
+  } catch (e) {
+    console.error('Error loading school branding', e);
+  }
+  return {};
+}
+
+export function saveSchoolBranding(branding: Partial<SchoolBranding>): void {
+  try {
+    const existing = loadSchoolBranding();
+    const merged = { ...existing, ...branding };
+    localStorage.setItem(SCHOOL_BRANDING_KEY, JSON.stringify(merged));
+  } catch (e) {
+    console.error('Error saving school branding', e);
+  }
+}
+
 export function loadProfile(): Profile {
   try {
+    const school = loadSchoolBranding();
     const raw = localStorage.getItem(PROFILE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (
-        parsed.namaLengkap === 'Tatang Supriatna, S.Pd.' ||
-        parsed.namaLengkap === 'Nabra Herbana, S.Pd., Gr.' ||
-        !parsed.namaLengkap
-      ) {
-        return DEFAULT_PROFILE;
-      }
-      return { ...DEFAULT_PROFILE, ...parsed };
+      return { ...DEFAULT_PROFILE, ...school, ...parsed };
     }
+    return { ...DEFAULT_PROFILE, ...school };
   } catch (e) {
     console.error('Error loading profile from localStorage', e);
   }
@@ -106,6 +149,30 @@ export function loadProfile(): Profile {
 export function saveProfile(profile: Profile): void {
   try {
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    // Persist school branding globally so logos and kop are never lost across logins
+    saveSchoolBranding({
+      kopBaris1: profile.kopBaris1,
+      kopBaris2: profile.kopBaris2,
+      kopBaris3: profile.kopBaris3,
+      kopAlamat: profile.kopAlamat,
+      kopKontak: profile.kopKontak,
+      logoType: profile.logoType,
+      customLogoUrl: profile.customLogoUrl,
+      loginLogoType: profile.loginLogoType,
+      loginLogoUrl: profile.loginLogoUrl,
+      kotaPenetapan: profile.kotaPenetapan,
+      unitKerja: profile.unitKerja,
+      namaAtasan: profile.namaAtasan,
+      nipAtasan: profile.nipAtasan,
+      jabatanAtasan: profile.jabatanAtasan,
+      sertakanAtasan: profile.sertakanAtasan,
+      labelEvidence: profile.labelEvidence,
+      alamatEvidence: profile.alamatEvidence,
+      koordinatEvidence: profile.koordinatEvidence,
+      skalaWatermark: profile.skalaWatermark,
+      posisiWatermark: profile.posisiWatermark,
+      sertakanCatatanDiFoto: profile.sertakanCatatanDiFoto,
+    });
   } catch (e) {
     console.error('Error saving profile to localStorage', e);
   }

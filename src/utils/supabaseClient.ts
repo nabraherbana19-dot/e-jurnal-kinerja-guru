@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Pegawai, DailyReport, UserRole } from '../types';
+import { loadSchoolBranding } from './storage';
 
 // Default initial teachers for SD Negeri Sukabudi 02
 export const INITIAL_PEGAWAI_LIST: Pegawai[] = [
@@ -146,11 +147,6 @@ export function loadLocalPegawaiList(): Pegawai[] {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Reset if it still contains old hardcoded real name 'Tatang Supriatna'
-        if (parsed.some((p: Pegawai) => p.namaLengkap && (p.namaLengkap.includes('Tatang') || p.namaLengkap.includes('Siti Rohmah')))) {
-          localStorage.setItem(PEGAWAI_LIST_STORAGE_KEY, JSON.stringify(INITIAL_PEGAWAI_LIST));
-          return INITIAL_PEGAWAI_LIST;
-        }
         return parsed;
       }
     }
@@ -203,6 +199,8 @@ export async function fetchPegawaiList(): Promise<Pegawai[]> {
           kopKontak: d.kop_kontak || '',
           logoType: d.logo_type || 'disdik',
           customLogoUrl: d.custom_logo_url,
+          loginLogoType: d.login_logo_type || 'default',
+          loginLogoUrl: d.login_logo_url,
           labelEvidence: d.label_evidence || 'Evidence Sikawan',
           alamatEvidence: d.alamat_evidence,
           koordinatEvidence: d.koordinat_evidence,
@@ -256,6 +254,8 @@ export async function upsertPegawai(pegawai: Pegawai): Promise<Pegawai[]> {
         kop_kontak: pegawai.kopKontak,
         logo_type: pegawai.logoType,
         custom_logo_url: pegawai.customLogoUrl,
+        login_logo_type: pegawai.loginLogoType,
+        login_logo_url: pegawai.loginLogoUrl,
         label_evidence: pegawai.labelEvidence,
         alamat_evidence: pegawai.alamatEvidence,
         koordinat_evidence: pegawai.koordinatEvidence,
@@ -289,32 +289,33 @@ export async function deletePegawai(pegawaiId: string): Promise<Pegawai[]> {
 
 // Convert a Pegawai item to Profile format
 export function convertPegawaiToProfile(pegawai: Pegawai) {
+  const school = loadSchoolBranding();
   return {
     avatarUrl: pegawai.avatarUrl || '',
     namaLengkap: pegawai.namaLengkap,
     nip: pegawai.nip,
     pangkatGolongan: pegawai.pangkatGolongan,
     jabatan: pegawai.jabatan,
-    unitKerja: pegawai.unitKerja,
-    kotaPenetapan: pegawai.kotaPenetapan,
-    sertakanAtasan: pegawai.sertakanAtasan,
-    namaAtasan: pegawai.namaAtasan,
-    nipAtasan: pegawai.nipAtasan,
-    jabatanAtasan: pegawai.jabatanAtasan,
-    kopBaris1: pegawai.kopBaris1 || 'PEMERINTAH KABUPATEN / KOTA',
-    kopBaris2: pegawai.kopBaris2 || 'DINAS PENDIDIKAN',
-    kopBaris3: pegawai.kopBaris3 || 'SD NEGERI CONTOH',
-    kopAlamat: pegawai.kopAlamat || '',
-    kopKontak: pegawai.kopKontak || '',
-    logoType: pegawai.logoType || 'none',
-    customLogoUrl: pegawai.customLogoUrl,
-    loginLogoUrl: pegawai.loginLogoUrl,
-    loginLogoType: pegawai.loginLogoType || 'default',
-    labelEvidence: pegawai.labelEvidence || 'Evidence Sikawan',
-    alamatEvidence: pegawai.alamatEvidence,
-    koordinatEvidence: pegawai.koordinatEvidence,
-    skalaWatermark: pegawai.skalaWatermark ?? 0.55,
-    posisiWatermark: pegawai.posisiWatermark || 'kiri-bawah',
-    sertakanCatatanDiFoto: pegawai.sertakanCatatanDiFoto ?? false,
+    unitKerja: pegawai.unitKerja || school.unitKerja || 'SD Negeri Contoh',
+    kotaPenetapan: pegawai.kotaPenetapan || school.kotaPenetapan || 'Kota / Kabupaten',
+    sertakanAtasan: pegawai.sertakanAtasan ?? school.sertakanAtasan ?? true,
+    namaAtasan: pegawai.namaAtasan || school.namaAtasan || '-',
+    nipAtasan: pegawai.nipAtasan || school.nipAtasan || '-',
+    jabatanAtasan: pegawai.jabatanAtasan || school.jabatanAtasan || 'Kepala Sekolah',
+    kopBaris1: pegawai.kopBaris1 || school.kopBaris1 || 'PEMERINTAH KABUPATEN / KOTA',
+    kopBaris2: pegawai.kopBaris2 || school.kopBaris2 || 'DINAS PENDIDIKAN',
+    kopBaris3: pegawai.kopBaris3 || school.kopBaris3 || 'SD NEGERI CONTOH',
+    kopAlamat: pegawai.kopAlamat || school.kopAlamat || '',
+    kopKontak: pegawai.kopKontak || school.kopKontak || '',
+    logoType: (pegawai.logoType && pegawai.logoType !== 'none') ? pegawai.logoType : (school.logoType || 'none'),
+    customLogoUrl: pegawai.customLogoUrl || school.customLogoUrl,
+    loginLogoUrl: pegawai.loginLogoUrl || school.loginLogoUrl,
+    loginLogoType: (pegawai.loginLogoType && pegawai.loginLogoType !== 'default') ? pegawai.loginLogoType : (school.loginLogoType || 'default'),
+    labelEvidence: pegawai.labelEvidence || school.labelEvidence || 'Evidence Sikawan',
+    alamatEvidence: pegawai.alamatEvidence || school.alamatEvidence,
+    koordinatEvidence: pegawai.koordinatEvidence || school.koordinatEvidence,
+    skalaWatermark: pegawai.skalaWatermark ?? school.skalaWatermark ?? 0.55,
+    posisiWatermark: pegawai.posisiWatermark || school.posisiWatermark || 'kiri-bawah',
+    sertakanCatatanDiFoto: pegawai.sertakanCatatanDiFoto ?? school.sertakanCatatanDiFoto ?? false,
   };
 }

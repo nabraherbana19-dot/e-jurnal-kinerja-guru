@@ -21,6 +21,7 @@ import {
   upsertPegawai,
   deletePegawai,
   convertPegawaiToProfile,
+  fetchPegawaiList,
 } from './utils/supabaseClient';
 import { getLatestWorkingDateString, formatTanggalLengkapIndo } from './utils/dateUtils';
 import { SidebarNav, NavTab } from './components/SidebarNav';
@@ -106,6 +107,25 @@ export default function App() {
     setHistoryList(loadHistory());
   }, [report]);
 
+  // Sync teachers from Supabase on mount
+  useEffect(() => {
+    let isMounted = true;
+    async function initSupabaseData() {
+      try {
+        const remoteList = await fetchPegawaiList();
+        if (isMounted && Array.isArray(remoteList) && remoteList.length > 0) {
+          setPegawaiList(remoteList);
+        }
+      } catch (e) {
+        console.warn('Initial Supabase fetch error:', e);
+      }
+    }
+    initSupabaseData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => {
@@ -117,27 +137,67 @@ export default function App() {
     setProfile(updatedProfile);
     saveProfile(updatedProfile);
 
-    // Synchronize to pegawaiList if an active teacher is selected
-    if (selectedTeacherId) {
-      setPegawaiList((prev) => {
-        const updated = prev.map((p) => {
-          if (p.id === selectedTeacherId) {
-            return {
-              ...p,
-              namaLengkap: updatedProfile.namaLengkap,
-              nip: updatedProfile.nip,
-              jabatan: updatedProfile.jabatan,
-              pangkatGolongan: updatedProfile.pangkatGolongan,
-              unitKerja: updatedProfile.unitKerja,
-              avatarUrl: updatedProfile.avatarUrl,
-            };
-          }
-          return p;
-        });
-        saveLocalPegawaiList(updated);
-        return updated;
+    // Synchronize to pegawaiList and propagate school branding (logos & kop)
+    setPegawaiList((prev) => {
+      const updated = prev.map((p) => {
+        if (p.id === selectedTeacherId) {
+          return {
+            ...p,
+            namaLengkap: updatedProfile.namaLengkap,
+            nip: updatedProfile.nip,
+            jabatan: updatedProfile.jabatan,
+            pangkatGolongan: updatedProfile.pangkatGolongan,
+            unitKerja: updatedProfile.unitKerja,
+            avatarUrl: updatedProfile.avatarUrl,
+            customLogoUrl: updatedProfile.customLogoUrl,
+            logoType: updatedProfile.logoType,
+            loginLogoUrl: updatedProfile.loginLogoUrl,
+            loginLogoType: updatedProfile.loginLogoType,
+            kopBaris1: updatedProfile.kopBaris1,
+            kopBaris2: updatedProfile.kopBaris2,
+            kopBaris3: updatedProfile.kopBaris3,
+            kopAlamat: updatedProfile.kopAlamat,
+            kopKontak: updatedProfile.kopKontak,
+            namaAtasan: updatedProfile.namaAtasan,
+            nipAtasan: updatedProfile.nipAtasan,
+            jabatanAtasan: updatedProfile.jabatanAtasan,
+            sertakanAtasan: updatedProfile.sertakanAtasan,
+            kotaPenetapan: updatedProfile.kotaPenetapan,
+            labelEvidence: updatedProfile.labelEvidence,
+            alamatEvidence: updatedProfile.alamatEvidence,
+            koordinatEvidence: updatedProfile.koordinatEvidence,
+            skalaWatermark: updatedProfile.skalaWatermark,
+            posisiWatermark: updatedProfile.posisiWatermark,
+            sertakanCatatanDiFoto: updatedProfile.sertakanCatatanDiFoto,
+          };
+        }
+        // Propagate shared school branding to all other teachers
+        return {
+          ...p,
+          unitKerja: updatedProfile.unitKerja || p.unitKerja,
+          customLogoUrl: updatedProfile.customLogoUrl ?? p.customLogoUrl,
+          logoType: updatedProfile.logoType || p.logoType,
+          loginLogoUrl: updatedProfile.loginLogoUrl ?? p.loginLogoUrl,
+          loginLogoType: updatedProfile.loginLogoType || p.loginLogoType,
+          kopBaris1: updatedProfile.kopBaris1 || p.kopBaris1,
+          kopBaris2: updatedProfile.kopBaris2 || p.kopBaris2,
+          kopBaris3: updatedProfile.kopBaris3 || p.kopBaris3,
+          kopAlamat: updatedProfile.kopAlamat || p.kopAlamat,
+          kopKontak: updatedProfile.kopKontak || p.kopKontak,
+          namaAtasan: updatedProfile.namaAtasan || p.namaAtasan,
+          nipAtasan: updatedProfile.nipAtasan || p.nipAtasan,
+          jabatanAtasan: updatedProfile.jabatanAtasan || p.jabatanAtasan,
+          kotaPenetapan: updatedProfile.kotaPenetapan || p.kotaPenetapan,
+        };
       });
-    }
+      saveLocalPegawaiList(updated);
+
+      const activeTeacher = updated.find((p) => p.id === selectedTeacherId);
+      if (activeTeacher) {
+        upsertPegawai(activeTeacher);
+      }
+      return updated;
+    });
 
     showToast('Profil pegawai & pengaturan berhasil diperbarui');
   };
@@ -500,6 +560,7 @@ export default function App() {
             currentRole === 'admin' ? (
               <AdminTeacherManagementView
                 pegawaiList={pegawaiList}
+                currentProfile={profile}
                 onSavePegawai={handleSavePegawai}
                 onDeletePegawai={handleDeletePegawai}
                 onSelectPegawaiForJournal={handleSelectPegawaiForJournal}

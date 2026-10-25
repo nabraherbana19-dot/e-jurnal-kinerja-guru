@@ -19,6 +19,7 @@ import {
 
 interface AdminTeacherManagementViewProps {
   pegawaiList: Pegawai[];
+  currentProfile?: any;
   onSavePegawai: (pegawai: Pegawai) => void;
   onDeletePegawai: (id: string) => void;
   onSelectPegawaiForJournal: (pegawai: Pegawai) => void;
@@ -27,6 +28,7 @@ interface AdminTeacherManagementViewProps {
 
 export const AdminTeacherManagementView: React.FC<AdminTeacherManagementViewProps> = ({
   pegawaiList,
+  currentProfile,
   onSavePegawai,
   onDeletePegawai,
   onSelectPegawaiForJournal,
@@ -45,10 +47,10 @@ export const AdminTeacherManagementView: React.FC<AdminTeacherManagementViewProp
   const [formRole, setFormRole] = useState<UserRole>('guru');
   const [formPangkat, setFormPangkat] = useState('Penata Muda / III/a');
   const [formJabatan, setFormJabatan] = useState('Guru');
-  const [formUnitKerja, setFormUnitKerja] = useState('SD Negeri Sukabudi 02');
-  const [formNamaAtasan, setFormNamaAtasan] = useState('Dra. Hj. Siti Rohmah, M.M.Pd.');
-  const [formNipAtasan, setFormNipAtasan] = useState('19680715 199303 2 004');
-  const [formJabatanAtasan, setFormJabatanAtasan] = useState('Kepala Sekolah');
+  const [formUnitKerja, setFormUnitKerja] = useState(currentProfile?.unitKerja || 'SD Negeri Sukabudi 02');
+  const [formNamaAtasan, setFormNamaAtasan] = useState(currentProfile?.namaAtasan || 'Dra. Hj. Siti Rohmah, M.M.Pd.');
+  const [formNipAtasan, setFormNipAtasan] = useState(currentProfile?.nipAtasan || '19680715 199303 2 004');
+  const [formJabatanAtasan, setFormJabatanAtasan] = useState(currentProfile?.jabatanAtasan || 'Kepala Sekolah');
 
   const filteredList = pegawaiList.filter((p) => {
     const matchRole = roleFilter === 'all' || p.role === roleFilter;
@@ -71,10 +73,10 @@ export const AdminTeacherManagementView: React.FC<AdminTeacherManagementViewProp
     setFormRole('guru');
     setFormPangkat('Penata Muda / III/a');
     setFormJabatan('Guru');
-    setFormUnitKerja('SD Negeri Sukabudi 02');
-    setFormNamaAtasan('Dra. Hj. Siti Rohmah, M.M.Pd.');
-    setFormNipAtasan('19680715 199303 2 004');
-    setFormJabatanAtasan('Kepala Sekolah');
+    setFormUnitKerja(currentProfile?.unitKerja || 'SD Negeri Sukabudi 02');
+    setFormNamaAtasan(currentProfile?.namaAtasan || 'Dra. Hj. Siti Rohmah, M.M.Pd.');
+    setFormNipAtasan(currentProfile?.nipAtasan || '19680715 199303 2 004');
+    setFormJabatanAtasan(currentProfile?.jabatanAtasan || 'Kepala Sekolah');
     setIsModalOpen(true);
   };
 
@@ -86,10 +88,10 @@ export const AdminTeacherManagementView: React.FC<AdminTeacherManagementViewProp
     setFormRole(p.role);
     setFormPangkat(p.pangkatGolongan);
     setFormJabatan(p.jabatan);
-    setFormUnitKerja(p.unitKerja);
-    setFormNamaAtasan(p.namaAtasan || 'Dra. Hj. Siti Rohmah, M.M.Pd.');
-    setFormNipAtasan(p.nipAtasan || '19680715 199303 2 004');
-    setFormJabatanAtasan(p.jabatanAtasan || 'Kepala Sekolah');
+    setFormUnitKerja(p.unitKerja || currentProfile?.unitKerja || 'SD Negeri Sukabudi 02');
+    setFormNamaAtasan(p.namaAtasan || currentProfile?.namaAtasan || 'Dra. Hj. Siti Rohmah, M.M.Pd.');
+    setFormNipAtasan(p.nipAtasan || currentProfile?.nipAtasan || '19680715 199303 2 004');
+    setFormJabatanAtasan(p.jabatanAtasan || currentProfile?.jabatanAtasan || 'Kepala Sekolah');
     setIsModalOpen(true);
   };
 
@@ -108,25 +110,28 @@ export const AdminTeacherManagementView: React.FC<AdminTeacherManagementViewProp
       role: formRole,
       pangkatGolongan: formPangkat,
       jabatan: formJabatan,
-      unitKerja: formUnitKerja,
-      kotaPenetapan: 'Bekasi',
+      unitKerja: formUnitKerja || currentProfile?.unitKerja || 'SD Negeri Sukabudi 02',
+      kotaPenetapan: currentProfile?.kotaPenetapan || 'Bekasi',
       sertakanAtasan: formRole === 'guru',
       namaAtasan: formNamaAtasan,
       nipAtasan: formNipAtasan,
       jabatanAtasan: formJabatanAtasan,
-      kopBaris1: 'DINAS PENDIDIKAN KABUPATEN BEKASI',
-      kopBaris2: 'JURNAL HARIAN KINERJA',
-      kopBaris3: formUnitKerja,
-      kopAlamat: 'Kp Jl. Bulak Temu, Sukabudi, Kec. Sukawangi, Kab. Bekasi 17620',
-      kopKontak: 'Email: sdn.sukabudi02@disdik.bekasikab.go.id',
-      logoType: 'disdik',
+      kopBaris1: currentProfile?.kopBaris1 || 'DINAS PENDIDIKAN KABUPATEN BEKASI',
+      kopBaris2: currentProfile?.kopBaris2 || 'JURNAL HARIAN KINERJA',
+      kopBaris3: formUnitKerja || currentProfile?.kopBaris3 || 'SD NEGERI SUKABUDI 02',
+      kopAlamat: currentProfile?.kopAlamat || 'Kp Jl. Bulak Temu, Sukabudi, Kec. Sukawangi, Kab. Bekasi 17620',
+      kopKontak: currentProfile?.kopKontak || 'Email: sdn.sukabudi02@disdik.bekasikab.go.id',
+      logoType: currentProfile?.logoType || 'disdik',
+      customLogoUrl: currentProfile?.customLogoUrl,
+      loginLogoType: currentProfile?.loginLogoType || 'default',
+      loginLogoUrl: currentProfile?.loginLogoUrl,
       avatarUrl: editingPegawai?.avatarUrl || '',
-      labelEvidence: 'Evidence Sikawan',
-      alamatEvidence: 'Kp Jl. Bulak Temu, Sukabudi, Kec. Sukawangi, Kabupaten Bekasi, Jawa Barat 17620',
-      koordinatEvidence: '6.139568°S, 107.110048°E',
-      skalaWatermark: 0.55,
-      posisiWatermark: 'kiri-bawah',
-      sertakanCatatanDiFoto: false,
+      labelEvidence: currentProfile?.labelEvidence || 'Evidence Sikawan',
+      alamatEvidence: currentProfile?.alamatEvidence || 'Kp Jl. Bulak Temu, Sukabudi, Kec. Sukawangi, Kabupaten Bekasi, Jawa Barat 17620',
+      koordinatEvidence: currentProfile?.koordinatEvidence || '6.139568°S, 107.110048°E',
+      skalaWatermark: currentProfile?.skalaWatermark ?? 0.55,
+      posisiWatermark: currentProfile?.posisiWatermark || 'kiri-bawah',
+      sertakanCatatanDiFoto: currentProfile?.sertakanCatatanDiFoto ?? false,
     };
 
     onSavePegawai(newPegawai);
